@@ -1,17 +1,17 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authApi } from "@/lib/api";
 import { translations } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 import { useLangStore } from "@/store/lang.store";
+import { cn } from "@/lib/utils";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -25,7 +25,6 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     if (!token) {
       toast.error(t.errorNoToken);
       return;
@@ -38,7 +37,6 @@ export default function ResetPasswordPage() {
       toast.error(t.errorLength);
       return;
     }
-
     setLoading(true);
     try {
       await authApi.resetPassword(token, newPassword);
@@ -70,11 +68,7 @@ export default function ResetPasswordPage() {
           {!token ? (
             <div className="text-center space-y-4">
               <p className="text-sm text-destructive">{t.errorNoToken}</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.replace("/login")}
-              >
+              <Button variant="ghost" size="sm" onClick={() => router.replace("/login")}>
                 ← {t.backToLogin}
               </Button>
             </div>
@@ -144,5 +138,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

@@ -25,7 +25,6 @@ export const api = ky.create({
   },
 });
 
-// ── Auth ─────────────────────────────────────────────────────
 export const authApi = {
   login: (email: string, password: string) =>
     api.post("auth/login", { json: { email, password } }).json<{
@@ -38,7 +37,32 @@ export const authApi = {
     api.post("auth/reset-password", { json: { token, password } }).json(),
 };
 
-// ── Runes ────────────────────────────────────────────────────
+export const profileApi = {
+  get: () =>
+    api.get("profile").json<{
+      id: number;
+      username: string;
+      email: string;
+      role: string;
+      created_at: string;
+    }>(),
+  update: (data: {
+    username?: string;
+    email?: string;
+    current_password?: string;
+    new_password?: string;
+  }) =>
+    api.put("profile", { json: data }).json<{
+      token: string;
+      user: {
+        id: number;
+        username: string;
+        email: string;
+        role: string;
+      };
+    }>(),
+};
+
 export const runesApi = {
   import: (file: File) => {
     const formData = new FormData();
@@ -78,7 +102,6 @@ export const runesApi = {
       }>(),
 };
 
-// ── Stats (via Symfony → FastAPI) ────────────────────────────
 export const statsApi = {
   getTopSets: (limit = 5) =>
     api.get("stats/top-sets", { searchParams: { limit } }).json<
@@ -88,7 +111,6 @@ export const statsApi = {
         rune_count: number;
       }>
     >(),
-
   getTop3ByStat: (statCode: string, minPct = 10) =>
     api
       .get("stats/top3-by-stat", {
@@ -105,10 +127,8 @@ export const statsApi = {
           pct: number;
         }>
       >(),
-
   getTotalRunes: () =>
     api.get("stats/total-runes").json<{ total_runes: number }>(),
-
   getAvailablePriStats: (setId: number) =>
     api
       .get("stats/available-pri-stats", {
@@ -127,7 +147,6 @@ export const statsApi = {
       >(),
 };
 
-// ── Admin ────────────────────────────────────────────────────
 export const adminApi = {
   getUsers: () =>
     api.get("admin/users").json<

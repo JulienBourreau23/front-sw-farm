@@ -6,18 +6,22 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { runesApi } from "@/lib/api";
+import { translations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useLangStore } from "@/store/lang.store";
 
 export default function ImportPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { lang } = useLangStore();
+  const t = translations[lang].import;
 
   const importMutation = useMutation({
     mutationFn: (file: File) => runesApi.import(file),
     onSuccess: (data) => {
-      toast.success(`Import réussi — ${data.rune_count} runes importées`);
+      toast.success(`${t.success} — ${data.rune_count} ${t.runesImported}`);
       setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ["averages"] });
       queryClient.invalidateQueries({ queryKey: ["total-runes"] });
@@ -25,13 +29,13 @@ export default function ImportPage() {
       queryClient.invalidateQueries({ queryKey: ["all-sets-count"] });
     },
     onError: () => {
-      toast.error("Erreur lors de l'import");
+      toast.error(t.errorImport);
     },
   });
 
   function handleFileSelect(file: File) {
     if (!file.name.endsWith(".json")) {
-      toast.error("Le fichier doit être un JSON");
+      toast.error(t.errorNotJson);
       return;
     }
     setSelectedFile(file);
@@ -57,26 +61,23 @@ export default function ImportPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Import</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Importe ton fichier JSON exporté depuis Summoners War
-        </p>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{t.subtitle}</p>
       </div>
 
       {importMutation.isSuccess && (
         <div className="rounded-xl border bg-card p-4 flex items-start gap-3">
           <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-medium">Import réussi</p>
+            <p className="text-sm font-medium">{t.success}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {importMutation.data.rune_count} runes importées — compte :{" "}
+              {importMutation.data.rune_count} {t.successSub}{" "}
               {importMutation.data.wizard_name}
             </p>
           </div>
         </div>
       )}
 
-      {/* Zone de drop */}
       <button
         type="button"
         className={cn(
@@ -107,10 +108,8 @@ export default function ImportPage() {
           ) : (
             <>
               <Upload className="w-12 h-12 text-muted-foreground mb-3" />
-              <p className="font-medium text-sm">Glisse ton fichier JSON ici</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                ou clique pour sélectionner · max 100 Mo
-              </p>
+              <p className="font-medium text-sm">{t.dropHere}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.dropHint}</p>
             </>
           )}
         </div>
@@ -129,27 +128,24 @@ export default function ImportPage() {
         disabled={!selectedFile || importMutation.isPending}
         onClick={handleSubmit}
       >
-        {importMutation.isPending ? "Import en cours..." : "Importer"}
+        {importMutation.isPending ? t.importing : t.importBtn}
       </Button>
 
       <div className="rounded-xl border bg-card p-4 space-y-2">
         <div className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-muted-foreground" />
-          <p className="text-xs font-medium text-muted-foreground">
-            Comment obtenir le fichier JSON ?
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">{t.howTo}</p>
         </div>
         <ol className="text-xs text-muted-foreground space-y-1 ml-6 list-decimal">
           <li>
-            Télécharge <strong className="text-foreground">SWEX</strong>{" "}
-            (Summoners War Exporter)
+            {t.step1} <strong className="text-foreground">SWEX</strong>{" "}
+            {t.step1b}
           </li>
-          <li>Lance l'export depuis l'application</li>
+          <li>{t.step2}</li>
           <li>
-            Récupère le fichier <code className="text-primary">.json</code>{" "}
-            généré
+            {t.step3} <code className="text-primary">.json</code> {t.step3b}
           </li>
-          <li>Importe-le ici</li>
+          <li>{t.step4}</li>
         </ol>
       </div>
     </div>

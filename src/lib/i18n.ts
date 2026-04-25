@@ -1,14 +1,13 @@
 export const translations = {
   fr: {
-    // Nav
     nav: {
       dashboard: "Dashboard",
       runes: "Runes",
+      artifacts: "Artefacts",
       import: "Import",
       admin: "Admin",
       logout: "Déconnexion",
     },
-    // Login
     login: {
       subtitle: "Outil d'analyse de runes — accès privé",
       email: "Email",
@@ -26,7 +25,6 @@ export const translations = {
       forgotSuccess: "Si cet email existe, un lien a été envoyé",
       loginSuccess: "Connexion réussie",
     },
-    // Reset password
     resetPassword: {
       title: "Nouveau mot de passe",
       subtitle: "Choisissez un nouveau mot de passe pour votre compte",
@@ -42,7 +40,6 @@ export const translations = {
       errorNoToken: "Lien invalide",
       minLength: "Minimum 8 caractères",
     },
-    // Dashboard
     dashboard: {
       title: "Dashboard",
       globalView: "Vue globale — tous sets confondus",
@@ -65,13 +62,42 @@ export const translations = {
       noImport: "Aucun import trouvé.",
       noImportSub: "Importe ton fichier JSON SW pour commencer.",
     },
-    // Runes
     runes: {
       title: "Runes",
       subtitle: "Moyennes par slot et stat principale",
       slot: "Slot",
     },
-    // Import
+    artifacts: {
+      title: "Artefacts",
+      subtitle: "Moyennes des effets secondaires",
+      elemental: "Élémentaire",
+      style: "Style de monstre",
+      allAttributes: "Tous attributs",
+      allStyles: "Tous styles",
+      allPri: "Toutes stats",
+      commonEffects: "Effets communs",
+      specificEffects: "Effets spécifiques",
+      noData: "Aucune donnée",
+      artifacts: "artefacts",
+      base: "Base",
+      withLock: "Avec lock",
+      // Attributs
+      fire: "Feu",
+      water: "Eau",
+      wind: "Vent",
+      light: "Lumière",
+      dark: "Ténèbre",
+      // Styles
+      atk: "Attaque",
+      def: "Défense",
+      hp: "PV",
+      support: "Support",
+      type: "Type",
+      // Stat principale
+      priHp: "PV +1500",
+      priAtk: "ATQ +100",
+      priDef: "DEF +100",
+    },
     import: {
       title: "Import",
       subtitle: "Importe ton fichier JSON exporté depuis Summoners War",
@@ -92,7 +118,6 @@ export const translations = {
       errorImport: "Erreur lors de l'import",
       runesImported: "runes importées",
     },
-    // Profile
     profile: {
       title: "Profil",
       subtitle: "Gérer vos informations personnelles",
@@ -118,7 +143,6 @@ export const translations = {
       roleAdmin: "Admin",
       roleUser: "User",
     },
-    // Admin
     admin: {
       title: "Admin",
       subtitle: "Gestion des comptes utilisateurs",
@@ -153,15 +177,14 @@ export const translations = {
     },
   },
   en: {
-    // Nav
     nav: {
       dashboard: "Dashboard",
       runes: "Runes",
+      artifacts: "Artifacts",
       import: "Import",
       admin: "Admin",
       logout: "Logout",
     },
-    // Login
     login: {
       subtitle: "Rune analysis tool — private access",
       email: "Email",
@@ -179,7 +202,6 @@ export const translations = {
       forgotSuccess: "If this email exists, a link has been sent",
       loginSuccess: "Logged in",
     },
-    // Reset password
     resetPassword: {
       title: "New password",
       subtitle: "Choose a new password for your account",
@@ -195,7 +217,6 @@ export const translations = {
       errorNoToken: "Invalid link",
       minLength: "Minimum 8 characters",
     },
-    // Dashboard
     dashboard: {
       title: "Dashboard",
       globalView: "Global view — all sets",
@@ -218,13 +239,39 @@ export const translations = {
       noImport: "No import found.",
       noImportSub: "Import your SW JSON file to get started.",
     },
-    // Runes
     runes: {
       title: "Runes",
       subtitle: "Averages by slot and main stat",
       slot: "Slot",
     },
-    // Import
+    artifacts: {
+      title: "Artifacts",
+      subtitle: "Secondary effect averages",
+      elemental: "Elemental",
+      style: "Monster type",
+      allAttributes: "All attributes",
+      allStyles: "All types",
+      allPri: "All main stats",
+      commonEffects: "Common effects",
+      specificEffects: "Specific effects",
+      noData: "No data",
+      artifacts: "artifacts",
+      base: "Base",
+      withLock: "With lock",
+      fire: "Fire",
+      water: "Water",
+      wind: "Wind",
+      light: "Light",
+      dark: "Dark",
+      atk: "Attack",
+      def: "Defense",
+      hp: "HP",
+      support: "Support",
+      type: "Type",
+      priHp: "HP +1500",
+      priAtk: "ATK +100",
+      priDef: "DEF +100",
+    },
     import: {
       title: "Import",
       subtitle: "Import your JSON file exported from Summoners War",
@@ -245,7 +292,6 @@ export const translations = {
       errorImport: "Import error",
       runesImported: "runes imported",
     },
-    // Profile
     profile: {
       title: "Profile",
       subtitle: "Manage your personal information",
@@ -271,7 +317,6 @@ export const translations = {
       roleAdmin: "Admin",
       roleUser: "User",
     },
-    // Admin
     admin: {
       title: "Admin",
       subtitle: "User account management",

@@ -177,3 +177,58 @@ export const adminApi = {
   ) => api.put(`admin/users/${id}`, { json: data }).json(),
   deleteUser: (id: number) => api.delete(`admin/users/${id}`).json(),
 };
+
+// ── Artefacts ────────────────────────────────────────────────────────────────
+
+export type ArtifactAverage = {
+  effect_id: number;
+  avg_value: number;
+  max_value: number;
+  artifact_count: number;
+};
+
+export type ArtifactAveragesResponse = {
+  filters: {
+    type: number | null;
+    attribute: number | null;
+    unit_style: number | null;
+    pri_effect_id: number | null;
+    min_level: number | null;
+  };
+  artifact_count: number;
+  averages: ArtifactAverage[];
+};
+
+export type ArtifactStatsResponse = {
+  total: number;
+  by_type: { elemental: number; style: number };
+  by_attribute: {
+    fire: number;
+    water: number;
+    wind: number;
+    light: number;
+    dark: number;
+  };
+  by_unit_style: { atk: number; def: number; hp: number; support: number };
+  by_pri_effect: { hp: number; atk: number; def: number };
+};
+
+export const artifactsApi = {
+  getAverages: (params: {
+    type?: number;
+    attribute?: number;
+    unit_style?: number;
+    pri_effect_id?: number;
+    min_level?: number;
+  }) =>
+    api
+      .get("artifacts/averages", {
+        searchParams: Object.fromEntries(
+          Object.entries(params).filter(([, v]) => v !== undefined),
+        ) as Record<string, string | number>,
+      })
+      .json<ArtifactAveragesResponse>(),
+
+  getStats: () =>
+    api.get("artifacts/stats").json<ArtifactStatsResponse>(),
+};

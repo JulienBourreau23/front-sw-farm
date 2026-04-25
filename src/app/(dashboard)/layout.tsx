@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/layout/navbar";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -27,9 +28,10 @@ export default function DashboardLayout({
   if (!hydrated || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <main className="container mx-auto px-4 py-6 max-w-7xl">{children}</main>
+      <main className="flex-1 container mx-auto px-4 py-6 max-w-7xl">{children}</main>
+      <Footer />
     </div>
   );
 }

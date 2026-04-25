@@ -20,9 +20,10 @@ export function Navbar() {
   const t = translations[lang].nav;
 
   const NAV_LINKS = [
-    { href: "/", label: t.dashboard },
-    { href: "/runes", label: t.runes },
-    { href: "/import", label: t.import },
+    { href: "/",          label: t.dashboard },
+    { href: "/runes",     label: t.runes },
+    { href: "/artifacts", label: t.artifacts },
+    { href: "/import",    label: t.import },
   ];
 
   function handleLogout() {

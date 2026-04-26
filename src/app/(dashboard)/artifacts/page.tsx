@@ -10,11 +10,11 @@ import { useAuthStore } from "@/store/auth.store";
 import { useLangStore } from "@/store/lang.store";
 
 const ATTRIBUTES = [
-  { id: 1, key: "fire"    },
-  { id: 2, key: "water"   },
-  { id: 3, key: "wind"    },
-  { id: 4, key: "light"   },
-  { id: 5, key: "dark"    },
+  { id: 1, key: "fire"  },
+  { id: 2, key: "water" },
+  { id: 3, key: "wind"  },
+  { id: 4, key: "light" },
+  { id: 5, key: "dark"  },
 ] as const;
 
 const UNIT_STYLES = [
@@ -40,7 +40,7 @@ export default function ArtifactsPage() {
   const [elemPri,   setElemPri]   = useState<number | undefined>(undefined);
   const [styleUnit, setStyleUnit] = useState<number | undefined>(undefined);
   const [stylePri,  setStylePri]  = useState<number | undefined>(undefined);
-  const [openModal, setOpenModal] = useState<"elemental" | "style" | null>(null);
+  const [openModal, setOpenModal] = useState<"elemental" | "archetype" | null>(null);
 
   const { data: stats } = useQuery({
     queryKey: ["artifact-stats", userId],
@@ -56,8 +56,8 @@ export default function ArtifactsPage() {
     enabled:  !!userId,
   });
 
-  const styleQuery = useQuery({
-    queryKey: ["artifact-averages", "style", styleUnit, stylePri, userId],
+  const archetypeQuery = useQuery({
+    queryKey: ["artifact-averages", "archetype", styleUnit, stylePri, userId],
     queryFn:  () => artifactsApi.getAverages({ type: 2, unit_style: styleUnit, pri_effect_id: stylePri }),
     staleTime: 1000 * 60 * 5,
     enabled:  !!userId,
@@ -67,18 +67,18 @@ export default function ArtifactsPage() {
     return [...parts.filter(Boolean), `${count} ${t.artifacts}`].join(" • ");
   }
 
-  const elemCount  = elemQuery.data?.artifact_count  ?? stats?.by_type.elemental ?? 0;
-  const styleCount = styleQuery.data?.artifact_count ?? stats?.by_type.style     ?? 0;
+  const elemCount      = elemQuery.data?.artifact_count      ?? stats?.by_type.elemental ?? 0;
+  const archetypeCount = archetypeQuery.data?.artifact_count ?? stats?.by_type.style     ?? 0;
 
   const elemBadge = buildBadge([
-    elemAttr ? t[ATTRIBUTES.find((a) => a.id === elemAttr)?.key ?? "fire"]   : undefined,
-    elemPri  ? t[PRI_EFFECTS.find((p) => p.id === elemPri)?.key ?? "priHp"] : undefined,
+    elemAttr ? t[ATTRIBUTES.find((a) => a.id === elemAttr)?.key  ?? "fire"]   : undefined,
+    elemPri  ? t[PRI_EFFECTS.find((p) => p.id === elemPri)?.key  ?? "priHp"]  : undefined,
   ], elemCount);
 
-  const styleBadge = buildBadge([
-    styleUnit ? t[UNIT_STYLES.find((s) => s.id === styleUnit)?.key ?? "atk"]  : undefined,
-    stylePri  ? t[PRI_EFFECTS.find((p) => p.id === stylePri)?.key ?? "priHp"] : undefined,
-  ], styleCount);
+  const archetypeBadge = buildBadge([
+    styleUnit ? t[UNIT_STYLES.find((s) => s.id === styleUnit)?.key ?? "atk"]   : undefined,
+    stylePri  ? t[PRI_EFFECTS.find((p) => p.id === stylePri)?.key  ?? "priHp"] : undefined,
+  ], archetypeCount);
 
   return (
     <div className="space-y-6">
@@ -89,7 +89,7 @@ export default function ArtifactsPage() {
 
       <div className="flex gap-4 items-start">
 
-        {/* Carte élémentaire */}
+        {/* Carte Attribut (type=1) */}
         <div className="flex flex-col gap-3 flex-1 min-w-0">
           <div className="flex flex-wrap gap-2">
             <select
@@ -127,7 +127,7 @@ export default function ArtifactsPage() {
           />
         </div>
 
-        {/* Carte type */}
+        {/* Carte Archétype (type=2) */}
         <div className="flex flex-col gap-3 flex-1 min-w-0">
           <div className="flex flex-wrap gap-2">
             <select
@@ -135,7 +135,7 @@ export default function ArtifactsPage() {
               value={styleUnit ?? ""}
               onChange={(e) => setStyleUnit(e.target.value ? Number(e.target.value) : undefined)}
             >
-              <option value="">{t.allStyles}</option>
+              <option value="">{t.allArchetypes}</option>
               {UNIT_STYLES.map((s) => (
                 <option key={s.id} value={s.id}>
                   {t[s.key]}{stats ? ` (${stats.by_unit_style[s.key]})` : ""}
@@ -156,12 +156,12 @@ export default function ArtifactsPage() {
             </select>
           </div>
           <ArtifactCard
-            title={t.type}
-            badge={styleBadge}
-            averages={styleQuery.data?.averages ?? []}
-            isLoading={styleQuery.isLoading}
+            title={t.archetype}
+            badge={archetypeBadge}
+            averages={archetypeQuery.data?.averages ?? []}
+            isLoading={archetypeQuery.isLoading}
             lang={lang}
-            onClick={() => setOpenModal("style")}
+            onClick={() => setOpenModal("archetype")}
           />
         </div>
 
@@ -176,11 +176,11 @@ export default function ArtifactsPage() {
           onClose={() => setOpenModal(null)}
         />
       )}
-      {openModal === "style" && (
+      {openModal === "archetype" && (
         <ArtifactModal
-          title={t.type}
-          badge={styleBadge}
-          averages={styleQuery.data?.averages ?? []}
+          title={t.archetype}
+          badge={archetypeBadge}
+          averages={archetypeQuery.data?.averages ?? []}
           lang={lang}
           onClose={() => setOpenModal(null)}
         />

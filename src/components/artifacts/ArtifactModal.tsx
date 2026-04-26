@@ -14,12 +14,10 @@ interface ArtifactModalProps {
 }
 
 export function ArtifactModal({
-  title,
-  badge,
-  averages,
-  lang,
-  onClose,
+  title, badge, averages, lang, onClose,
 }: ArtifactModalProps) {
+  const maxCount = Math.max(...averages.map((a) => a.artifact_count), 1);
+
   return (
     <div
       role="presentation"
@@ -52,7 +50,6 @@ export function ArtifactModal({
 
         {/* Contenu scrollable */}
         <div className="overflow-y-auto flex-1 px-5 py-4">
-          {/* Légende */}
           <div className="flex items-center gap-3 text-xs text-muted-foreground border-b pb-2 mb-2">
             <div className="flex-1">Effet</div>
             <div className="w-20 text-right">Artefacts</div>

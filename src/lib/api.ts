@@ -78,6 +78,7 @@ export const runesApi = {
     slot_no?: number;
     pri_stat?: number;
     min_upgrade?: number;
+    is_ancient?: boolean;
     refresh?: boolean;
   }) =>
     api

@@ -1,19 +1,20 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { SUBSTAT_MAX, SUBSTAT_MAX_NO_GRIND, type RuneType } from "@/lib/rune-stats";
 
 const STAT_LABELS: Record<string, string> = {
-  HP_FLAT: "PV +",
-  HP_PCT: "PV %",
+  HP_FLAT:  "PV +",
+  HP_PCT:   "PV %",
   ATK_FLAT: "ATQ +",
-  ATK_PCT: "ATQ %",
+  ATK_PCT:  "ATQ %",
   DEF_FLAT: "DEF +",
-  DEF_PCT: "DEF %",
-  SPD: "VIT",
-  CR: "Tx critiq.",
-  CD: "Dgts critiq.",
-  RES: "RES",
-  ACC: "Précision",
+  DEF_PCT:  "DEF %",
+  SPD:      "VIT",
+  CR:       "Tx critiq.",
+  CD:       "Dgts critiq.",
+  RES:      "RES",
+  ACC:      "Précision",
 };
 
 const FIXED_MAIN_STATS: Record<number, string> = {
@@ -39,6 +40,7 @@ interface SlotCardProps {
   isLoading?: boolean;
   onClick: () => void;
   cardHeight?: number;
+  runeType?: RuneType;
 }
 
 export function SlotCard({
@@ -48,6 +50,7 @@ export function SlotCard({
   isLoading,
   onClick,
   cardHeight = 160,
+  runeType = "normal",
 }: SlotCardProps) {
   const isPair = slotNo % 2 === 0;
   const fixedStat = FIXED_MAIN_STATS[slotNo];
@@ -67,12 +70,7 @@ export function SlotCard({
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2 shrink-0">
-        <span
-          className={cn(
-            "text-xs font-medium",
-            isPair ? "text-primary" : "text-muted-foreground",
-          )}
-        >
+        <span className={cn("text-xs font-medium", isPair ? "text-primary" : "text-muted-foreground")}>
           Slot {slotNo}
         </span>
         <span className="text-xs text-muted-foreground">
@@ -91,39 +89,28 @@ export function SlotCard({
         ) : top4.length > 0 ? (
           <div className="space-y-1">
             {top4.map((avg) => {
-              const label = STAT_LABELS[avg.stat_code] ?? avg.stat_name_fr;
-              const decimals = [
-                "HP_FLAT",
-                "ATK_FLAT",
-                "DEF_FLAT",
-                "SPD",
-              ].includes(avg.stat_code)
-                ? 0
-                : 1;
+              const label    = STAT_LABELS[avg.stat_code] ?? avg.stat_name_fr;
+              const decimals = ["HP_FLAT", "ATK_FLAT", "DEF_FLAT", "SPD"].includes(avg.stat_code) ? 0 : 1;
+              const maxVal   = SUBSTAT_MAX[runeType][avg.stat_code] ?? 1;
+              const pct      = Math.min((avg.avg_with_grind / maxVal) * 100, 100);
               return (
-                <div
-                  key={avg.stat_id}
-                  className="flex items-center justify-between gap-1"
-                >
-                  <span className="text-xs text-muted-foreground truncate">
-                    {label}
-                  </span>
-                  <div className="flex gap-1.5 shrink-0 text-xs font-medium">
-                    <span className="text-muted-foreground">
-                      {avg.avg_base.toFixed(decimals)}
-                    </span>
-                    <span className="text-primary">
+                <div key={avg.stat_id} className="space-y-0.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs text-muted-foreground truncate">{label}</span>
+                    <span className="text-xs font-medium text-primary shrink-0">
                       {avg.avg_with_grind.toFixed(decimals)}
+                      <span className="text-muted-foreground/50 font-normal">/{maxVal}</span>
                     </span>
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary/40 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground text-center">
-            Aucune donnée
-          </p>
+          <p className="text-xs text-muted-foreground text-center">Aucune donnée</p>
         )}
       </div>
 

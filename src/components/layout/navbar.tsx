@@ -23,6 +23,7 @@ export function Navbar() {
     { href: "/",          label: t.dashboard },
     { href: "/runes",     label: t.runes },
     { href: "/artifacts", label: t.artifacts },
+    { href: "/monsters",  label: t.monsters },
     { href: "/import",    label: t.import },
   ];
 

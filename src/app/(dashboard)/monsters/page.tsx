@@ -21,8 +21,8 @@ const ELEMENTS = [
 const ELEMENT_STYLES: Record<number, { border: string; text: string; bg: string; badge: string }> = {
   1: { border: "border-orange-400/30", text: "text-orange-400",  bg: "bg-orange-400/5",  badge: "bg-orange-400/15 text-orange-300"  },
   2: { border: "border-blue-400/30",   text: "text-blue-400",    bg: "bg-blue-400/5",    badge: "bg-blue-400/15 text-blue-300"      },
-  3: { border: "border-emerald-400/30",text: "text-emerald-400", bg: "bg-emerald-400/5", badge: "bg-emerald-400/15 text-emerald-300"},
-  4: { border: "border-yellow-300/30", text: "text-yellow-300",  bg: "bg-yellow-300/5",  badge: "bg-yellow-300/15 text-yellow-200"  },
+  3: { border: "border-yellow-400/30", text: "text-yellow-400",  bg: "bg-yellow-400/5",  badge: "bg-yellow-400/15 text-yellow-300"  },
+  4: { border: "border-slate-400/30",  text: "text-slate-200",   bg: "bg-slate-200/5",   badge: "bg-slate-200/15 text-slate-100"   },
   5: { border: "border-purple-400/30", text: "text-purple-400",  bg: "bg-purple-400/5",  badge: "bg-purple-400/15 text-purple-300"  },
 };
 

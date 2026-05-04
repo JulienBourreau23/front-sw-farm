@@ -39,7 +39,7 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
       <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
         {!imgError ? (
           <img
-            src={`${process.env.NEXT_PUBLIC_TIER_LIST_URL}/static/icons/monsters/${monster.unit_master_id}.png`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}/monsters/icon/${monster.unit_master_id}`}
             alt={name}
             width={64}
             height={64}

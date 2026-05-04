@@ -1,0 +1,236 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { monstersApi, type Monster } from "@/lib/api";
+import { translations } from "@/lib/i18n";
+import { useAuthStore } from "@/store/auth.store";
+import { useLangStore } from "@/store/lang.store";
+
+// ── Constantes ────────────────────────────────────────────────────────────────
+
+const ELEMENTS = [
+  { id: 0, emoji: "⚔️",  fr: "Tous",     en: "All"   },
+  { id: 1, emoji: "🔥",  fr: "Feu",      en: "Fire"  },
+  { id: 2, emoji: "💧",  fr: "Eau",      en: "Water" },
+  { id: 3, emoji: "🌀",  fr: "Vent",     en: "Wind"  },
+  { id: 4, emoji: "☀️",  fr: "Lumière",  en: "Light" },
+  { id: 5, emoji: "🌑",  fr: "Ténèbre",  en: "Dark"  },
+] as const;
+
+const ELEMENT_STYLES: Record<number, { border: string; text: string; bg: string; badge: string }> = {
+  1: { border: "border-orange-400/30", text: "text-orange-400",  bg: "bg-orange-400/5",  badge: "bg-orange-400/15 text-orange-300"  },
+  2: { border: "border-blue-400/30",   text: "text-blue-400",    bg: "bg-blue-400/5",    badge: "bg-blue-400/15 text-blue-300"      },
+  3: { border: "border-emerald-400/30",text: "text-emerald-400", bg: "bg-emerald-400/5", badge: "bg-emerald-400/15 text-emerald-300"},
+  4: { border: "border-yellow-300/30", text: "text-yellow-300",  bg: "bg-yellow-300/5",  badge: "bg-yellow-300/15 text-yellow-200"  },
+  5: { border: "border-purple-400/30", text: "text-purple-400",  bg: "bg-purple-400/5",  badge: "bg-purple-400/15 text-purple-300"  },
+};
+
+// ── Carte monstre ─────────────────────────────────────────────────────────────
+
+function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr" | "en"; showBadge: boolean }) {
+  const [imgError, setImgError] = useState(false);
+  const name   = lang === "fr" ? monster.name_fr : monster.name_en;
+  const styles = ELEMENT_STYLES[monster.element];
+  const elLabel = lang === "fr" ? monster.element_fr : monster.element_en;
+
+  return (
+    <div className={`rounded-xl border bg-card flex flex-col items-center gap-2 p-3 transition-all hover:scale-[1.02] hover:shadow-lg ${styles?.border ?? "border-border"} ${styles?.bg ?? ""}`}>
+      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
+        {!imgError ? (
+          <img
+            src={`${process.env.NEXT_PUBLIC_TIER_LIST_URL}/static/icons/monsters/${monster.unit_master_id}.png`}
+            alt={name}
+            width={64}
+            height={64}
+            className="w-full h-full object-contain"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <span className="text-2xl">👾</span>
+        )}
+      </div>
+
+      <p className="text-xs font-medium text-center leading-tight line-clamp-2 text-foreground w-full">
+        {name}
+      </p>
+
+      {monster.natural_stars !== null && monster.natural_stars > 0 && (
+        <div className="flex gap-0.5">
+          {Array.from({ length: monster.natural_stars }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: stars
+            <span key={i} className="text-yellow-400 text-[10px]">★</span>
+          ))}
+        </div>
+      )}
+
+      {showBadge && styles && (
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${styles.badge}`}>
+          {elLabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MonsterCardSkeleton() {
+  return (
+    <div className="rounded-xl border bg-card flex flex-col items-center gap-2 p-3 animate-pulse">
+      <div className="w-16 h-16 rounded-lg bg-muted" />
+      <div className="h-3 w-20 bg-muted rounded" />
+      <div className="h-2 w-12 bg-muted rounded" />
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function MonstersPage() {
+  const user   = useAuthStore((s) => s.user);
+  const userId = user?.id;
+  const { lang } = useLangStore();
+
+  const [activeElement, setActiveElement] = useState(0);
+  const [search, setSearch] = useState("");
+
+  const { data: monsters, isLoading, isError } = useQuery({
+    queryKey: ["owned-monsters", userId],
+    queryFn:  () => monstersApi.getOwned(),
+    staleTime: 1000 * 60 * 5,
+    enabled:  !!userId,
+  });
+
+  const countByElement = useMemo(() => {
+    if (!monsters) return {} as Record<number, number>;
+    return monsters.reduce<Record<number, number>>((acc, m) => {
+      acc[m.element] = (acc[m.element] ?? 0) + 1;
+      return acc;
+    }, {});
+  }, [monsters]);
+
+  const filtered = useMemo(() => {
+    if (!monsters) return [];
+    let list = activeElement !== 0 ? monsters.filter((m) => m.element === activeElement) : monsters;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((m) =>
+        m.name_fr.toLowerCase().includes(q) || m.name_en.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [monsters, activeElement, search]);
+
+  const totalCount = monsters?.length ?? 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold">
+          {lang === "fr" ? "Monstres" : "Monsters"}
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          {isLoading
+            ? (lang === "fr" ? "Chargement..." : "Loading...")
+            : `${totalCount} ${lang === "fr" ? "monstres possédés" : "owned monsters"}`}
+        </p>
+      </div>
+
+      {/* Recherche */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">🔍</span>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={lang === "fr" ? "Rechercher (FR ou EN)..." : "Search (FR or EN)..."}
+          className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Onglets éléments */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {ELEMENTS.map((el) => {
+          const count    = el.id === 0 ? totalCount : (countByElement[el.id] ?? 0);
+          const isActive = activeElement === el.id;
+          const styles   = el.id !== 0 ? ELEMENT_STYLES[el.id] : null;
+
+          return (
+            <button
+              key={el.id}
+              type="button"
+              onClick={() => setActiveElement(el.id)}
+              className={[
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium",
+                "border transition-all whitespace-nowrap shrink-0",
+                isActive
+                  ? styles
+                    ? `${styles.border} ${styles.text} ${styles.bg}`
+                    : "border-primary/50 text-primary bg-primary/10"
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-accent",
+              ].join(" ")}
+            >
+              <span>{el.emoji}</span>
+              <span>{lang === "fr" ? el.fr : el.en}</span>
+              {count > 0 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted">
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contenu */}
+      {isError && (
+        <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
+          {lang === "fr" ? "Erreur lors du chargement des monstres." : "Error loading monsters."}
+        </div>
+      )}
+
+      {!isError && (
+        <>
+          {search && !isLoading && (
+            <p className="text-xs text-muted-foreground">
+              {filtered.length} {lang === "fr" ? "résultat(s)" : "result(s)"} pour «{search}»
+            </p>
+          )}
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+            {isLoading
+              ? Array.from({ length: 24 }).map((_, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+                  <MonsterCardSkeleton key={i} />
+                ))
+              : filtered.length > 0
+                ? filtered.map((monster) => (
+                    <MonsterCard
+                      key={monster.unit_id_sw}
+                      monster={monster}
+                      lang={lang}
+                      showBadge={activeElement === 0}
+                    />
+                  ))
+                : (
+                  <div className="col-span-full py-12 text-center text-sm text-muted-foreground">
+                    {search
+                      ? (lang === "fr" ? "Aucun monstre trouvé pour cette recherche." : "No monster found.")
+                      : (lang === "fr" ? "Aucun monstre dans cet élément." : "No monsters in this element.")}
+                  </div>
+                )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

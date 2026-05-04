@@ -233,3 +233,23 @@ export const artifactsApi = {
   getStats: () =>
     api.get("artifacts/stats").json<ArtifactStatsResponse>(),
 };
+
+// ── Monstres ─────────────────────────────────────────────────────────────────
+
+export type Monster = {
+  unit_id_sw:     number;
+  unit_master_id: number;
+  name_fr:        string;
+  name_en:        string;
+  element:        number;
+  element_fr:     string;
+  element_en:     string;
+  natural_stars:  number | null;
+  stars:          number;
+  level:          number;
+};
+
+export const monstersApi = {
+  getOwned: () =>
+    api.get("monsters").json<Monster[]>(),
+};

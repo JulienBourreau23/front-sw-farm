@@ -10,17 +10,17 @@ import { useAuthStore } from "@/store/auth.store";
 import { useLangStore } from "@/store/lang.store";
 
 const STAT_LABELS: Record<string, { fr: string; en: string }> = {
-  HP_FLAT:  { fr: "PV +",       en: "HP +"      },
-  HP_PCT:   { fr: "PV %",       en: "HP %"      },
-  ATK_FLAT: { fr: "ATQ +",      en: "ATK +"     },
-  ATK_PCT:  { fr: "ATQ %",      en: "ATK %"     },
-  DEF_FLAT: { fr: "DEF +",      en: "DEF +"     },
-  DEF_PCT:  { fr: "DEF %",      en: "DEF %"     },
-  SPD:      { fr: "VIT",        en: "SPD"       },
-  CR:       { fr: "Tx critiq.", en: "Crit Rate" },
-  CD:       { fr: "Dgts critiq.", en: "Crit DMG"},
-  RES:      { fr: "RES",        en: "RES"       },
-  ACC:      { fr: "Précision",  en: "ACC"       },
+  HP_FLAT:  { fr: "PV +",         en: "HP +"      },
+  HP_PCT:   { fr: "PV %",         en: "HP %"      },
+  ATK_FLAT: { fr: "ATQ +",        en: "ATK +"     },
+  ATK_PCT:  { fr: "ATQ %",        en: "ATK %"     },
+  DEF_FLAT: { fr: "DEF +",        en: "DEF +"     },
+  DEF_PCT:  { fr: "DEF %",        en: "DEF %"     },
+  SPD:      { fr: "VIT",          en: "SPD"       },
+  CR:       { fr: "Tx critiq.",   en: "Crit Rate" },
+  CD:       { fr: "Dgts critiq.", en: "Crit DMG"  },
+  RES:      { fr: "RES",          en: "RES"       },
+  ACC:      { fr: "Précision",    en: "ACC"       },
 };
 
 const RUNE_SETS: Record<number, string> = {
@@ -43,28 +43,39 @@ interface Avg {
 
 function StatRow({
   avg,
+  prevAvg,
   lang,
   runeType,
 }: {
   avg: Avg;
+  prevAvg?: Avg;
   lang: "fr" | "en";
   runeType: RuneType;
 }) {
-  const labelObj  = STAT_LABELS[avg.stat_code];
-  const label     = labelObj ? labelObj[lang] : avg.stat_name_fr;
-  const decimals  = ["HP_FLAT", "ATK_FLAT", "DEF_FLAT", "SPD"].includes(avg.stat_code) ? 0 : 1;
-  const maxVal    = SUBSTAT_MAX[runeType][avg.stat_code] ?? 1;
-  const pct       = Math.min((avg.avg_with_grind / maxVal) * 100, 100);
+  const labelObj = STAT_LABELS[avg.stat_code];
+  const label    = labelObj ? labelObj[lang] : avg.stat_name_fr;
+  const decimals = ["HP_FLAT", "ATK_FLAT", "DEF_FLAT", "SPD"].includes(avg.stat_code) ? 0 : 1;
+  const maxVal   = SUBSTAT_MAX[runeType][avg.stat_code] ?? 1;
+  const pct      = Math.min((avg.avg_with_grind / maxVal) * 100, 100);
+  const prevPct  = prevAvg ? Math.min((prevAvg.avg_with_grind / maxVal) * 100, 100) : null;
+  const delta    = prevAvg ? avg.avg_with_grind - prevAvg.avg_with_grind : null;
 
   return (
     <div className="px-5 py-3 flex items-center gap-4">
       <div className="w-24 shrink-0">
         <span className="text-sm">{label}</span>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 space-y-1">
+        {/* Barre actuelle */}
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <div className="h-full bg-primary/40 rounded-full" style={{ width: `${pct}%` }} />
         </div>
+        {/* Barre précédente */}
+        {prevPct !== null && (
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-muted-foreground/25 rounded-full" style={{ width: `${prevPct}%` }} />
+          </div>
+        )}
       </div>
       <div className="flex gap-3 shrink-0 text-sm font-medium">
         <span className="text-muted-foreground w-12 text-right">
@@ -77,10 +88,15 @@ function StatRow({
           /{maxVal}
         </span>
       </div>
-      <div className="w-14 text-right">
+      <div className="w-14 text-right flex flex-col items-end gap-0.5">
         <span className="text-xs text-muted-foreground">
           {avg.rune_count.toLocaleString()}
         </span>
+        {delta !== null && (
+          <span className={`text-[10px] font-medium ${delta > 0 ? "text-emerald-400" : delta < 0 ? "text-red-400" : "text-muted-foreground"}`}>
+            {delta > 0 ? "+" : ""}{delta.toFixed(decimals)}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -92,8 +108,8 @@ export default function DashboardPage() {
   const { lang } = useLangStore();
   const t = translations[lang].dashboard;
   const [selectedSetId, setSelectedSetId] = useState<number | undefined>(undefined);
-  const [topStat,   setTopStat]   = useState("SPD");
-  const [runeType,  setRuneType]  = useState<RuneType>("normal");
+  const [topStat,  setTopStat]  = useState("SPD");
+  const [runeType, setRuneType] = useState<RuneType>("normal");
 
   const { data: totalData } = useQuery({
     queryKey: ["total-runes", userId],
@@ -117,6 +133,21 @@ export default function DashboardPage() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // ── Import précédent (comparaison) ───────────────────────
+  const { data: prevGlobalData } = useQuery({
+    queryKey: ["previous-averages", "global", userId],
+    queryFn:  () => runesApi.getPreviousAverages({}),
+    staleTime: 1000 * 60 * 10,
+    enabled: !!userId,
+  });
+
+  const { data: prevSetData } = useQuery({
+    queryKey: ["previous-averages", "set", selectedSetId, userId],
+    queryFn:  () => runesApi.getPreviousAverages({ set_id: selectedSetId }),
+    enabled: selectedSetId !== undefined && !!userId,
+    staleTime: 1000 * 60 * 10,
+  });
+
   const { data: topSetsData } = useQuery({
     queryKey: ["top-sets", userId],
     queryFn:  () => statsApi.getTopSets(5),
@@ -133,6 +164,9 @@ export default function DashboardPage() {
 
   const globalAverages: Avg[]  = globalData?.averages ?? [];
   const displayAverages: Avg[] = selectedSetId !== undefined ? (setData?.averages ?? []) : globalAverages;
+  const prevAverages: Avg[]    = selectedSetId !== undefined ? (prevSetData?.averages ?? []) : (prevGlobalData?.averages ?? []);
+  const prevAvgMap             = Object.fromEntries(prevAverages.map((a) => [a.stat_code, a]));
+
   const isLoading = globalLoading || (selectedSetId !== undefined && setLoading);
   const decimals  = (code: string) => ["HP_FLAT", "ATK_FLAT", "DEF_FLAT", "SPD"].includes(code) ? 0 : 1;
   const setLabel  = selectedSetId ? ` — ${RUNE_SETS[selectedSetId]}` : "";
@@ -189,7 +223,15 @@ export default function DashboardPage() {
           <div className="px-5 py-4 border-b flex items-center justify-between gap-4">
             <div>
               <h2 className="text-sm font-medium">{t.substatAvg}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{t.baseWithGrind}</p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-xs text-muted-foreground">{t.baseWithGrind}</p>
+                {prevAverages.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-3 h-1 bg-muted-foreground/25 rounded-full" />
+                    <span>{lang === "fr" ? "Import précédent" : "Previous import"}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <select
               className="text-xs bg-muted border border-border rounded-lg px-3 py-1.5 text-foreground"
@@ -217,7 +259,13 @@ export default function DashboardPage() {
                 <div className="w-14 text-right">Runes</div>
               </div>
               {displayAverages.map((avg: Avg) => (
-                <StatRow key={avg.stat_id} avg={avg} lang={lang} runeType={runeType} />
+                <StatRow
+                  key={avg.stat_id}
+                  avg={avg}
+                  prevAvg={prevAvgMap[avg.stat_code]}
+                  lang={lang}
+                  runeType={runeType}
+                />
               ))}
             </div>
           )}

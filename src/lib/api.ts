@@ -63,6 +63,21 @@ export const profileApi = {
     }>(),
 };
 
+type AveragesResponse = {
+  set_id: number | null;
+  slot_no: number | null;
+  pri_stat_filter: number | null;
+  averages: Array<{
+    stat_id: number;
+    stat_code: string;
+    stat_name_fr: string;
+    is_percent: boolean;
+    avg_base: number;
+    avg_with_grind: number;
+    rune_count: number;
+  }>;
+};
+
 export const runesApi = {
   import: (file: File) => {
     const formData = new FormData();
@@ -87,20 +102,19 @@ export const runesApi = {
           Object.entries(params).filter(([, v]) => v !== undefined),
         ) as Record<string, string | number | boolean>,
       })
-      .json<{
-        set_id: number | null;
-        slot_no: number | null;
-        pri_stat_filter: number | null;
-        averages: Array<{
-          stat_id: number;
-          stat_code: string;
-          stat_name_fr: string;
-          is_percent: boolean;
-          avg_base: number;
-          avg_with_grind: number;
-          rune_count: number;
-        }>;
-      }>(),
+      .json<AveragesResponse>(),
+  getPreviousAverages: (params: {
+    set_id?: number;
+    slot_no?: number;
+    pri_stat?: number;
+  }) =>
+    api
+      .get("runes/previous-averages", {
+        searchParams: Object.fromEntries(
+          Object.entries(params).filter(([, v]) => v !== undefined),
+        ) as Record<string, string | number>,
+      })
+      .json<AveragesResponse>(),
 };
 
 export const statsApi = {

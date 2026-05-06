@@ -72,7 +72,7 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
 
   const inner = (
     <div className={`rounded-xl flex flex-col items-center gap-2 p-3 transition-all hover:scale-[1.02] hover:shadow-lg relative
-      ${monster.is_skilled_up ? "bg-card" : `border bg-card ${styles?.border ?? "border-border"} ${styles?.bg ?? ""}`}
+      ${`bg-card ${styles?.bg ?? ""}`}
     `}>
       {monster.is_skilled_up && (
         <div className="absolute top-1.5 right-1.5 text-xs leading-none" title={lang === "fr" ? "Skills maxés" : "Fully skilled up"}>

@@ -251,16 +251,20 @@ export const artifactsApi = {
 // ── Monstres ─────────────────────────────────────────────────────────────────
 
 export type Monster = {
-  unit_id_sw:     number;
-  unit_master_id: number;
-  name_fr:        string;
-  name_en:        string;
-  element:        number;
-  element_fr:     string;
-  element_en:     string;
-  natural_stars:  number | null;
-  stars:          number;
-  level:          number;
+  unit_id_sw:       number;
+  unit_master_id:   number;
+  name_fr:          string;
+  name_en:          string;
+  element:          number;
+  element_fr:       string;
+  element_en:       string;
+  natural_stars:    number | null;
+  stars:            number;
+  level:            number;
+  lucksack_slug:    string | null;
+  lucksack_url:     string | null;
+  skill_ups_to_max: number | null;
+  is_skilled_up:    boolean;
 };
 
 export const monstersApi = {

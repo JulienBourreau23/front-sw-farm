@@ -3,11 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { monstersApi, type Monster } from "@/lib/api";
-import { translations } from "@/lib/i18n";
 import { useAuthStore } from "@/store/auth.store";
 import { useLangStore } from "@/store/lang.store";
-
-// ── Constantes ────────────────────────────────────────────────────────────────
 
 const ELEMENTS = [
   { id: 0, emoji: "⚔️",  fr: "Tous",     en: "All"   },
@@ -22,20 +19,27 @@ const ELEMENT_STYLES: Record<number, { border: string; text: string; bg: string;
   1: { border: "border-orange-400/30", text: "text-orange-400",  bg: "bg-orange-400/5",  badge: "bg-orange-400/15 text-orange-300"  },
   2: { border: "border-blue-400/30",   text: "text-blue-400",    bg: "bg-blue-400/5",    badge: "bg-blue-400/15 text-blue-300"      },
   3: { border: "border-yellow-400/30", text: "text-yellow-400",  bg: "bg-yellow-400/5",  badge: "bg-yellow-400/15 text-yellow-300"  },
-  4: { border: "border-slate-400/30",  text: "text-slate-200",   bg: "bg-slate-200/5",   badge: "bg-slate-200/15 text-slate-100"   },
+  4: { border: "border-slate-400/30",  text: "text-slate-200",   bg: "bg-slate-200/5",   badge: "bg-slate-200/15 text-slate-100"    },
   5: { border: "border-purple-400/30", text: "text-purple-400",  bg: "bg-purple-400/5",  badge: "bg-purple-400/15 text-purple-300"  },
 };
 
-// ── Carte monstre ─────────────────────────────────────────────────────────────
-
 function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr" | "en"; showBadge: boolean }) {
   const [imgError, setImgError] = useState(false);
-  const name   = lang === "fr" ? monster.name_fr : monster.name_en;
-  const styles = ELEMENT_STYLES[monster.element];
+  const name    = lang === "fr" ? monster.name_fr : monster.name_en;
+  const styles  = ELEMENT_STYLES[monster.element];
   const elLabel = lang === "fr" ? monster.element_fr : monster.element_en;
 
-  return (
-    <div className={`rounded-xl border bg-card flex flex-col items-center gap-2 p-3 transition-all hover:scale-[1.02] hover:shadow-lg ${styles?.border ?? "border-border"} ${styles?.bg ?? ""}`}>
+  const card = (
+    <div className={`relative rounded-xl border bg-card flex flex-col items-center gap-2 p-3 transition-all hover:scale-[1.02] hover:shadow-lg ${styles?.border ?? "border-border"} ${styles?.bg ?? ""} ${monster.lucksack_url ? "cursor-pointer" : ""}`}>
+
+      {/* Icône skill up */}
+      {monster.is_skilled_up && (
+        <div className="absolute top-1.5 right-1.5 text-sm" title={lang === "fr" ? "Skills maxés" : "Fully skilled"}>
+          ⭐
+        </div>
+      )}
+
+      {/* Image */}
       <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
         {!imgError ? (
           <img
@@ -51,10 +55,12 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
         )}
       </div>
 
+      {/* Nom */}
       <p className="text-xs font-medium text-center leading-tight line-clamp-2 text-foreground w-full">
         {name}
       </p>
 
+      {/* Étoiles naturelles */}
       {monster.natural_stars !== null && monster.natural_stars > 0 && (
         <div className="flex gap-0.5">
           {Array.from({ length: monster.natural_stars }).map((_, i) => (
@@ -64,6 +70,7 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
         </div>
       )}
 
+      {/* Badge élément */}
       {showBadge && styles && (
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${styles.badge}`}>
           {elLabel}
@@ -71,6 +78,16 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
       )}
     </div>
   );
+
+  if (monster.lucksack_url) {
+    return (
+      <a href={monster.lucksack_url} target="_blank" rel="noopener noreferrer">
+        {card}
+      </a>
+    );
+  }
+
+  return card;
 }
 
 function MonsterCardSkeleton() {
@@ -82,8 +99,6 @@ function MonsterCardSkeleton() {
     </div>
   );
 }
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MonstersPage() {
   const user   = useAuthStore((s) => s.user);
@@ -120,7 +135,8 @@ export default function MonstersPage() {
     return list;
   }, [monsters, activeElement, search]);
 
-  const totalCount = monsters?.length ?? 0;
+  const totalCount  = monsters?.length ?? 0;
+  const skilledCount = monsters?.filter((m) => m.is_skilled_up).length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -132,7 +148,7 @@ export default function MonstersPage() {
         <p className="text-muted-foreground text-sm mt-1">
           {isLoading
             ? (lang === "fr" ? "Chargement..." : "Loading...")
-            : `${totalCount} ${lang === "fr" ? "monstres possédés" : "owned monsters"}`}
+            : `${totalCount} ${lang === "fr" ? "monstres possédés" : "owned monsters"}${skilledCount > 0 ? ` · ⭐ ${skilledCount} ${lang === "fr" ? "maxés" : "skilled up"}` : ""}`}
         </p>
       </div>
 

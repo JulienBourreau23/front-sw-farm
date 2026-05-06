@@ -50,7 +50,7 @@ const SHINE_CSS = `
     border-radius: 12px;
     overflow: hidden;
     height: 100%;
-    background: hsl(var(--card));
+    background: var(--card);
   }
 `;
 

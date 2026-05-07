@@ -73,7 +73,7 @@ function StatRow({
         {/* Barre précédente */}
         {prevPct !== null && (
           <div className="h-1 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-muted-foreground/25 rounded-full" style={{ width: `${prevPct}%` }} />
+            <div className="h-full rounded-full" style={{ width: `${prevPct}%`, background: "rgba(245, 158, 11, 0.5)" }} />
           </div>
         )}
       </div>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground">{t.baseWithGrind}</p>
                 {prevAverages.length > 0 && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <div className="w-3 h-1 bg-muted-foreground/25 rounded-full" />
+                    <div className="w-3 h-1 rounded-full" style={{ background: "rgba(245, 158, 11, 0.5)" }} />
                     <span>{lang === "fr" ? "Import précédent" : "Previous import"}</span>
                   </div>
                 )}

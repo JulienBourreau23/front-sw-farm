@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
-import { monstersApi, type Monster } from "@/lib/api";
+import { monstersApi, type Monster, type SkillFilter } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { useLangStore } from "@/store/lang.store";
 
@@ -22,6 +22,20 @@ const ELEMENT_STYLES: Record<number, { border: string; text: string; bg: string;
   4: { border: "border-slate-400/30",  text: "text-slate-200",   bg: "bg-slate-200/5",   badge: "bg-slate-200/15 text-slate-100"    },
   5: { border: "border-purple-400/30", text: "text-purple-400",  bg: "bg-purple-400/5",  badge: "bg-purple-400/15 text-purple-300"  },
 };
+
+// ── Cycle des filtres skill up ────────────────────────────────────────────────
+const SKILL_FILTERS: Array<{
+  value: SkillFilter;
+  emoji: string;
+  fr: string;
+  en: string;
+  className: string;
+}> = [
+  { value: "all",     emoji: "⚔️", fr: "Tous",     en: "All",        className: "border-border text-muted-foreground hover:text-foreground hover:bg-accent" },
+  { value: "skilled", emoji: "👑", fr: "Maxés",    en: "Skilled up", className: "border-yellow-400/50 text-yellow-400 bg-yellow-400/10" },
+  { value: "partial", emoji: "🔶", fr: "En cours", en: "Partial",    className: "border-amber-500/50 text-amber-400 bg-amber-500/10" },
+  { value: "none",    emoji: "⬜", fr: "Aucun SU", en: "No SU",      className: "border-muted-foreground/30 text-muted-foreground bg-muted/30" },
+];
 
 const SHINE_CSS = `
   @property --shine-angle {
@@ -52,6 +66,11 @@ const SHINE_CSS = `
     height: 100%;
     background: var(--card);
   }
+  .neon-partial {
+    border-radius: 12px;
+    border: 1.5px solid #f59e0b;
+    box-shadow: 0 0 6px 1px rgba(245, 158, 11, 0.35), 0 0 12px 2px rgba(245, 158, 11, 0.12);
+  }
 `;
 
 function ShineStyleInjector() {
@@ -65,20 +84,27 @@ function ShineStyleInjector() {
   return null;
 }
 
+// ── Détecter l'état skill up d'un monstre ────────────────────────────────────
+function getSkillState(m: Monster): "skilled" | "partial" | "none" {
+  if (m.is_skilled_up) return "skilled";
+  if (m.skill_ups_to_max !== null && m.current_skill_ups > 0) return "partial";
+  return "none";
+}
+
 function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr" | "en"; showBadge: boolean }) {
   const [imgError, setImgError] = useState(false);
-  const name    = lang === "fr" ? monster.name_fr : monster.name_en;
-  const styles  = ELEMENT_STYLES[monster.element];
-  const elLabel = lang === "fr" ? monster.element_fr : monster.element_en;
+  const name      = lang === "fr" ? monster.name_fr : monster.name_en;
+  const styles    = ELEMENT_STYLES[monster.element];
+  const elLabel   = lang === "fr" ? monster.element_fr : monster.element_en;
+  const skillState = getSkillState(monster);
 
   const inner = (
-    <div className={`rounded-xl flex flex-col items-center gap-2 p-3 transition-all hover:scale-[1.02] hover:shadow-lg relative
-      ${`bg-card ${styles?.bg ?? ""}`}
-    `}>
-      {monster.is_skilled_up && (
-        <div className="absolute top-1.5 right-1.5 text-xs leading-none" title={lang === "fr" ? "Skills maxés" : "Fully skilled up"}>
-          👑
-        </div>
+    <div className={`rounded-xl flex flex-col items-center gap-2 p-3 transition-all hover:scale-[1.02] hover:shadow-lg relative bg-card ${styles?.bg ?? ""}`}>
+      {skillState === "skilled" && (
+        <div className="absolute top-1.5 right-1.5 text-xs leading-none" title={lang === "fr" ? "Skills maxés" : "Fully skilled up"}>👑</div>
+      )}
+      {skillState === "partial" && (
+        <div className="absolute top-1.5 right-1.5 text-xs leading-none" title={lang === "fr" ? "Skills en cours" : "Partially skilled"}>🔶</div>
       )}
       <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
         {!imgError ? (
@@ -113,7 +139,7 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
     <a href={monster.lucksack_url} target="_blank" rel="noopener noreferrer" className="block">{inner}</a>
   ) : inner;
 
-  if (monster.is_skilled_up) {
+  if (skillState === "skilled") {
     return (
       <div className="shine-border-wrapper">
         <div className="shine-border-inner">{wrapped}</div>
@@ -121,7 +147,15 @@ function MonsterCard({ monster, lang, showBadge }: { monster: Monster; lang: "fr
     );
   }
 
-  return wrapped;
+  if (skillState === "partial") {
+    return <div className="neon-partial">{wrapped}</div>;
+  }
+
+  return (
+    <div className={`rounded-xl border ${styles?.border ?? "border-border"}`}>
+      {wrapped}
+    </div>
+  );
 }
 
 function MonsterCardSkeleton() {
@@ -141,7 +175,7 @@ export default function MonstersPage() {
 
   const [activeElement, setActiveElement] = useState(0);
   const [search, setSearch]               = useState("");
-  const [skilledOnly, setSkilledOnly]     = useState(false);
+  const [skillFilter, setSkillFilter]     = useState<SkillFilter>("all");
 
   const { data: monsters, isLoading, isError } = useQuery({
     queryKey: ["owned-monsters", userId],
@@ -162,32 +196,55 @@ export default function MonstersPage() {
     if (!monsters) return [];
     let list = monsters;
     if (activeElement !== 0) list = list.filter((m) => m.element === activeElement);
-    if (skilledOnly)         list = list.filter((m) => m.is_skilled_up);
+    if (skillFilter === "skilled") list = list.filter((m) => m.is_skilled_up);
+    if (skillFilter === "partial") list = list.filter((m) => !m.is_skilled_up && m.current_skill_ups > 0);
+    if (skillFilter === "none")    list = list.filter((m) => m.current_skill_ups === 0);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter((m) => m.name_fr.toLowerCase().includes(q) || m.name_en.toLowerCase().includes(q));
     }
     return list;
-  }, [monsters, activeElement, skilledOnly, search]);
+  }, [monsters, activeElement, skillFilter, search]);
 
   const totalCount   = monsters?.length ?? 0;
   const skilledCount = monsters?.filter((m) => m.is_skilled_up).length ?? 0;
+  const partialCount = monsters?.filter((m) => !m.is_skilled_up && m.current_skill_ups > 0).length ?? 0;
+  const noneCount    = monsters?.filter((m) => m.current_skill_ups === 0).length ?? 0;
+
+  const counts: Record<SkillFilter, number> = {
+    all: totalCount, skilled: skilledCount, partial: partialCount, none: noneCount,
+  };
+
+  // Cycle au clic
+  const cycleFilter = () => {
+    const order: SkillFilter[] = ["all", "skilled", "partial", "none"];
+    const idx = order.indexOf(skillFilter);
+    setSkillFilter(order[(idx + 1) % order.length]);
+  };
+
+  const currentFilterDef = SKILL_FILTERS.find((f) => f.value === skillFilter)!;
+
+  const emptyMessage = () => {
+    if (search) return lang === "fr" ? "Aucun monstre trouvé pour cette recherche." : "No monster found.";
+    if (skillFilter === "skilled") return lang === "fr" ? "Aucun monstre maxé ici." : "No skilled up monsters here.";
+    if (skillFilter === "partial") return lang === "fr" ? "Aucun monstre en cours ici." : "No partially skilled monsters here.";
+    if (skillFilter === "none")    return lang === "fr" ? "Tous les monstres ont des skill ups ici." : "All monsters have skill ups here.";
+    return lang === "fr" ? "Aucun monstre dans cet élément." : "No monsters in this element.";
+  };
 
   return (
     <>
       <ShineStyleInjector />
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-semibold">{lang === "fr" ? "Monstres" : "Monsters"}</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {isLoading
               ? (lang === "fr" ? "Chargement..." : "Loading...")
-              : `${totalCount} ${lang === "fr" ? "monstres possédés" : "owned monsters"}${skilledCount > 0 ? ` · 👑 ${skilledCount} ${lang === "fr" ? "maxés" : "skilled up"}` : ""}`}
+              : `${totalCount} ${lang === "fr" ? "monstres possédés" : "owned monsters"} · 👑 ${skilledCount} · 🔶 ${partialCount}`}
           </p>
         </div>
 
-        {/* Recherche */}
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">🔍</span>
           <input
@@ -202,9 +259,7 @@ export default function MonstersPage() {
           )}
         </div>
 
-        {/* Onglets éléments + toggle skill up */}
         <div className="flex items-center gap-2">
-          {/* Onglets — scrollable */}
           <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0">
             {ELEMENTS.map((el) => {
               const count    = el.id === 0 ? totalCount : (countByElement[el.id] ?? 0);
@@ -233,25 +288,19 @@ export default function MonstersPage() {
             })}
           </div>
 
-          {/* Toggle skill up — à droite, fixe */}
+          {/* Bouton cyclique skill filter */}
           <button
             type="button"
-            onClick={() => setSkilledOnly((v) => !v)}
-            className={[
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all whitespace-nowrap shrink-0",
-              skilledOnly
-                ? "border-yellow-400/50 text-yellow-400 bg-yellow-400/10"
-                : "border-border text-muted-foreground hover:text-foreground hover:bg-accent",
-            ].join(" ")}
-            title={lang === "fr" ? "Afficher uniquement les monstres maxés" : "Show only skilled up monsters"}
+            onClick={cycleFilter}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all whitespace-nowrap shrink-0 ${currentFilterDef.className}`}
+            title={lang === "fr" ? "Filtrer par skill up (cliquer pour changer)" : "Filter by skill up (click to cycle)"}
           >
-            <span>👑</span>
-            <span>{lang === "fr" ? "Maxés" : "Skilled up"}</span>
-            {skilledCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted">{skilledCount}</span>}
+            <span>{currentFilterDef.emoji}</span>
+            <span>{lang === "fr" ? currentFilterDef.fr : currentFilterDef.en}</span>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted/50">{counts[skillFilter]}</span>
           </button>
         </div>
 
-        {/* Contenu */}
         {isError && (
           <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
             {lang === "fr" ? "Erreur lors du chargement des monstres." : "Error loading monsters."}
@@ -274,11 +323,7 @@ export default function MonstersPage() {
                     ))
                   : (
                     <div className="col-span-full py-12 text-center text-sm text-muted-foreground">
-                      {search
-                        ? (lang === "fr" ? "Aucun monstre trouvé pour cette recherche." : "No monster found.")
-                        : skilledOnly
-                          ? (lang === "fr" ? "Aucun monstre maxé dans cet élément." : "No skilled up monsters here.")
-                          : (lang === "fr" ? "Aucun monstre dans cet élément." : "No monsters in this element.")}
+                      {emptyMessage()}
                     </div>
                   )}
             </div>
